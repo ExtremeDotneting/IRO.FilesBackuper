@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,55 +12,17 @@ namespace IRO.FilesBackuper.MainLogic
     {
         public IList<string> FindFiles(string rootFolderPath, FindFilesRule findFilesRule)
         {
-
             if (!Directory.Exists(rootFolderPath))
             {
                 throw new Exception($"Can't find directory '{rootFolderPath}'.");
             }
 
-            //Init ignore list
-            var initialIgnoreFilePath = Path.Combine(rootFolderPath, BackuperConsts.InitialFileName);
-            File.WriteAllText(initialIgnoreFilePath, "");
-            var ignoreList = new IgnoreList(initialIgnoreFilePath);
-            File.Delete(initialIgnoreFilePath);
-
             //Inspect
-            var allFilesList = new List<string>();
-            InspectRecursively(rootFolderPath, rootFolderPath, allFilesList, ignoreList);
+            var outputFiles = new List<string>();
+            var ignores = ImmutableList.Create<IgnoreList>();
+            InspectRecursively(rootFolderPath, rootFolderPath, outputFiles, ignores, findFilesRule);
 
-            //Generate result
-            if (findFilesRule == FindFilesRule.All)
-            {
-                return allFilesList;
-            }
-            else if (findFilesRule == FindFilesRule.Ignored)
-            {
-                var ignoredFilesList = new List<string>();
-                foreach (var file in allFilesList)
-                {
-                    if (IsIgnored(ignoreList, file))
-                    {
-                        ignoredFilesList.Add(file);
-                    }
-                }
-                return ignoredFilesList;
-            }
-            else if (findFilesRule == FindFilesRule.Tracked)
-            {
-                var trackedFilesList = new List<string>();
-                foreach (var file in allFilesList)
-                {
-                    if (!IsIgnored(ignoreList, file))
-                    {
-                        trackedFilesList.Add(file);
-                    }
-                }
-                return trackedFilesList;
-            }
-            else
-            {
-                throw new ArgumentOutOfRangeException(nameof(findFilesRule));
-            }
+            return outputFiles;
         }
 
         //public IList<string> FullPathToRelative(ICollection<string> fullPathList, string relativeTo)
@@ -73,74 +36,84 @@ namespace IRO.FilesBackuper.MainLogic
         //    return resList;
         //}
 
-        void InspectRecursively(string rootFolderPath, string currentFolderPath, List<string> allFilesList, IgnoreList ignoreList)
+        void InspectRecursively(
+            string rootFolderPath,
+            string currentFolderPath,
+            List<string> outputFilesList,
+            ImmutableList<IgnoreList> ignores,
+            FindFilesRule findFilesRule)
         {
+            //Skip folder if it ignored.
+            var currentFolderRelativePath = ToRelativePath(rootFolderPath, currentFolderPath);
+            if (IsPathSkipped(ignores, findFilesRule, currentFolderRelativePath, true))
+            {
+                return;
+            }
+
             //Add rules if template file exists.
             var templateFilePath = Path.Combine(currentFolderPath, BackuperConsts.TemplateFileName);
             if (File.Exists(templateFilePath))
             {
-                var rules = File.ReadAllLines(templateFilePath);
-                ApplyTemplateRules(rootFolderPath, currentFolderPath, rules, ignoreList);
+                var newIgnoreList = new IgnoreList(templateFilePath);
+                ignores = ignores.Add(newIgnoreList);
             }
 
             //Add files to list.
             var filesPath = Directory.GetFiles(currentFolderPath);
             foreach (var filePath in filesPath)
             {
-                var relFilePath = Path.GetRelativePath(rootFolderPath, filePath)
-                    .Replace("\\", "/");
-                allFilesList.Add(relFilePath);
+                var relFilePath = ToRelativePath(rootFolderPath, filePath);
+                if (!IsPathSkipped(ignores, findFilesRule, relFilePath, false))
+                {
+                    outputFilesList.Add(relFilePath);
+                }
             }
 
             //Inspect subdirectories.
             var directories = Directory.GetDirectories(currentFolderPath);
             foreach (var dirPath in directories)
             {
-                InspectRecursively(rootFolderPath, dirPath, allFilesList, ignoreList);
+                InspectRecursively(rootFolderPath, dirPath, outputFilesList, ignores, findFilesRule);
             }
         }
 
-        bool IsIgnored(IgnoreList ignoreList, string path)
-        {         
-            var isIgnored = ignoreList.IsIgnored(path, pathIsDirectory: false);
-            return isIgnored;
-        }
-
-        void ApplyTemplateRules(string rootFolderPath, string currentFolderPath, IEnumerable<string> rules, IgnoreList ignoreList)
+        string ToRelativePath(string rootFolderPath, string path)
         {
-            var relativePath = Path.GetRelativePath(rootFolderPath, currentFolderPath);
-            var rulePrefix = relativePath.Replace("\\", "/");
-            if (!rulePrefix.EndsWith("/"))
+            var relFilePath = Path.GetRelativePath(rootFolderPath, path)
+                  .Replace("\\", "/");
+            return relFilePath;
+        }
+
+        bool IsPathSkipped(ImmutableList<IgnoreList> ignores, FindFilesRule findFilesRule, string path, bool pathIsDirectory)
+        {
+            if (findFilesRule == FindFilesRule.Tracked)
             {
-                rulePrefix = rulePrefix + "/";
+                bool hasOneIsIgnored = false;
+                foreach (var ignoreList in ignores)
+                {
+                    if (ignoreList.IsIgnored(path, pathIsDirectory))
+                    {
+                        hasOneIsIgnored = true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                return hasOneIsIgnored;
             }
-
-            foreach (var r in rules)
+            else if (findFilesRule == FindFilesRule.Ignored)
             {
-                if (string.IsNullOrWhiteSpace(r))
-                    continue;
-                var rule = r;
-                bool isNotIgnoreRule = false;
-                if (rule.StartsWith("!"))
+                foreach (var ignoreList in ignores)
                 {
-                    rule = rule.Substring(1);
-                    isNotIgnoreRule = true;
+                    if (ignoreList.IsIgnored(path, pathIsDirectory))
+                    {
+                        return false;
+                    }
                 }
-                if (rule.StartsWith("/") || rule.StartsWith("\\"))
-                {
-                    rule = rule.Substring(1);
-                }
-
-
-                if (rulePrefix != "./")
-                    rule = rulePrefix + rule;
-                if (isNotIgnoreRule)
-                {
-                    rule = "!" + rule;
-                }
-
-                ignoreList.AddRule(rule);
+                return true;
             }
+            return false;
         }
     }
 }

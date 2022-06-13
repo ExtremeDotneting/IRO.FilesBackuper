@@ -8,12 +8,13 @@ namespace IRO.FilesBackuper
 #if DEBUG
         static string[] TestCommands { get; } = new[]
         {
-            //"list --path=\"D:\\cf\\CODE_PROJECTS\\IRO_TOOLS\\IRO.FilesBackuper\\TestFiles\"",
-            //"list --path=\"D:\\cf\\CODE_PROJECTS\\IRO_TOOLS\\IRO.FilesBackuper\\TestFiles\" --rule=Ignored",
+            "list --path=\"D:\\cf\\CODE_PROJECTS\\IRO_TOOLS\\IRO.FilesBackuper\\TestFiles\"",
+            "list --path=\"D:\\cf\\CODE_PROJECTS\\IRO_TOOLS\\IRO.FilesBackuper\\TestFiles\" --rule=Ignored",
+            "list --path=\"D:\\cf\\CODE_PROJECTS\\IRO_TOOLS\\IRO.FilesBackuper\\TestFiles\" --rule=All",
             //"list --path=\"D:\\cf\\CODE_PROJECTS\\MauDay_ECom\\ECom.MauDauGW\" --count_size=1",
             //"list --path=\"D:\\cf\\CODE_PROJECTS\\MauDay_ECom\\ECom.MauDauGW\" --count_size=1 --rule=Ignored",
-            "list --path=\"D:\\cf\"",
-            "list --path=\"D:\\cf\" --rule=Ignored",
+            //"list --path=\"D:\\cf\"",
+            //"list --path=\"D:\\cf\" --rule=Ignored",
         };
 #endif
 
