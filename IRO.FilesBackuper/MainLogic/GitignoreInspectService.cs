@@ -4,45 +4,55 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using IRO.Threading.AsyncLinq;
 using MAB.DotIgnore;
 
 namespace IRO.FilesBackuper.MainLogic
 {
     public class GitignoreInspectService
     {
-        public IList<string> FindFiles(string rootFolderPath, FindFilesRule findFilesRule)
+        private readonly string _rootFolderPath;
+        private readonly FindFilesRule _findFilesRule;
+
+        protected AsyncLinqContext AsyncLinqCtx { get; } = AsyncLinqContext.Create();
+
+        public GitignoreInspectService(string rootFolderPath, FindFilesRule findFilesRule)
         {
-            if (!Directory.Exists(rootFolderPath))
+            this._rootFolderPath = rootFolderPath;
+            this._findFilesRule = findFilesRule;
+        }
+
+        public async Task<IList<string>> FindFiles()
+        {
+            if (!Directory.Exists(_rootFolderPath))
             {
-                throw new Exception($"Can't find directory '{rootFolderPath}'.");
+                throw new Exception($"Can't find directory '{_rootFolderPath}'.");
             }
 
             //Init ignore list
-            var initialIgnoreFilePath = Path.Combine(rootFolderPath, BackuperConsts.InitialFileName);
+            var initialIgnoreFilePath = Path.Combine(_rootFolderPath, BackuperConsts.InitialFileName);
             File.WriteAllText(initialIgnoreFilePath, "");
             var ignoreList = new IgnoreList(initialIgnoreFilePath);
             File.Delete(initialIgnoreFilePath);
 
             //Inspect
             var outputFiles = new List<string>();
-            InspectRecursively(rootFolderPath, rootFolderPath, outputFiles, ignoreList, findFilesRule);
+            await InspectRecursively(_rootFolderPath, outputFiles, ignoreList);
 
 
 
             return outputFiles;
         }
 
-        void InspectRecursively(
-            string rootFolderPath,
+        async Task InspectRecursively(
             string currentFolderPath,
             List<string> outputFilesList,
-            IgnoreList ignoreList,
-            FindFilesRule findFilesRule
+            IgnoreList ignoreList
             )
         {
             //Skip folder if it ignored.
-            var currentFolderRelativePath = ToRelativePath(rootFolderPath, currentFolderPath);
-            if (findFilesRule == FindFilesRule.Tracked && IsPathSkipped(ignoreList, findFilesRule, currentFolderRelativePath, true))
+            var currentFolderRelativePath = ToRelativePath( currentFolderPath);
+            if (_findFilesRule == FindFilesRule.Tracked && IsPathSkipped(ignoreList, currentFolderRelativePath, true))
             {
                 return;
             }
@@ -52,46 +62,46 @@ namespace IRO.FilesBackuper.MainLogic
             if (File.Exists(templateFilePath))
             {
                 var rules = File.ReadAllLines(templateFilePath);
-                ignoreList = ApplyTemplateRules(rootFolderPath, currentFolderPath, rules, ignoreList);
+                ignoreList = ApplyTemplateRules(_rootFolderPath, currentFolderPath, rules, ignoreList);
             }
 
             //Add files to list.
             var filesPath = Directory.GetFiles(currentFolderPath);
-            foreach (var filePath in filesPath)
+            await filesPath.ForEachAsync(async (fPath, pos) =>
             {
-                var relFilePath = ToRelativePath(rootFolderPath, filePath);
-                if (!IsPathSkipped(ignoreList, findFilesRule, relFilePath, false))
+                var relFilePath = ToRelativePath(fPath);
+                if (!IsPathSkipped(ignoreList, relFilePath, false))
                 {
                     outputFilesList.Add(relFilePath);
                 }
-            }
+            }, AsyncLinqCtx);
 
             //Inspect subdirectories.
             var directories = Directory.GetDirectories(currentFolderPath);
-            foreach (var dirPath in directories)
+            await directories.ForEachAsync(async (dirPath, pos) =>
             {
-                InspectRecursively(rootFolderPath, dirPath, outputFilesList, ignoreList, findFilesRule);
-            }
+                await InspectRecursively(dirPath, outputFilesList, ignoreList);
+            }, AsyncLinqCtx);
         }
 
-        string ToRelativePath(string rootFolderPath, string path)
+        string ToRelativePath(string path)
         {
-            var relFilePath = Path.GetRelativePath(rootFolderPath, path)
+            var relFilePath = Path.GetRelativePath(_rootFolderPath, path)
                   .Replace("\\", "/");
             return relFilePath;
         }
 
-        bool IsPathSkipped(IgnoreList ignoreList, FindFilesRule findFilesRule, string path, bool pathIsDirectory)
+        bool IsPathSkipped(IgnoreList ignoreList, string path, bool pathIsDirectory)
         {
             //If root.
             if (path == ".")
                 return false;
 
-            if (findFilesRule == FindFilesRule.Tracked)
+            if (_findFilesRule == FindFilesRule.Tracked)
             {
                 return ignoreList.IsIgnored(path, pathIsDirectory);
             }
-            else if (findFilesRule == FindFilesRule.Ignored)
+            else if (_findFilesRule == FindFilesRule.Ignored)
             {
                 return !ignoreList.IsIgnored(path, pathIsDirectory);
             }

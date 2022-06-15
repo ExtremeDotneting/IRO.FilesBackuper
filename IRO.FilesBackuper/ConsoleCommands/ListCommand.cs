@@ -7,11 +7,9 @@ namespace IRO.FilesBackuper.ConsoleCommands
 {
     public class BackupServiceCommands : BaseCommand
     {
-        readonly BackupService _backupService;
-
         public BackupServiceCommands()
         {
-            _backupService = new BackupService();
+           
         }
 
 
@@ -25,28 +23,32 @@ namespace IRO.FilesBackuper.ConsoleCommands
             bool countSize=false
             )
         {
-            if (string.IsNullOrWhiteSpace(rootDirPath))
+            Task.Run(async () =>
             {
-                rootDirPath = Environment.CurrentDirectory;
-            }
-            Write($"Inspectiong directory: '{rootDirPath}'.");
-            var files = _backupService.FindFiles(rootDirPath, rule);
-            //files = _backupService.FullPathToRelative(files, path);
-            WriteAsJson(files);
-
-            if (countSize)
-            {
-                long totalLengthBytes = 0;
-                foreach (var filePath in files)
+                if (string.IsNullOrWhiteSpace(rootDirPath))
                 {
-                    var fullFilePath = Path.Combine(rootDirPath, filePath);
-                    var lengthBytes = new FileInfo(fullFilePath).Length;
-                    totalLengthBytes += lengthBytes;
+                    rootDirPath = Environment.CurrentDirectory;
                 }
+                Write($"Inspectiong directory: '{rootDirPath}'.");
+                var backupService = new BackupService(rootDirPath, rule);
+                var files = await backupService.FindFiles();
+                //files = _backupService.FullPathToRelative(files, path);
+                WriteAsJson(files);
 
-                long totalKB = totalLengthBytes / 1024;
-                WriteWithColor($"Total files size is {totalKB} KB.", ConsoleColor.Yellow);
-            }
+                if (countSize)
+                {
+                    long totalLengthBytes = 0;
+                    foreach (var filePath in files)
+                    {
+                        var fullFilePath = Path.Combine(rootDirPath, filePath);
+                        var lengthBytes = new FileInfo(fullFilePath).Length;
+                        totalLengthBytes += lengthBytes;
+                    }
+
+                    long totalKB = totalLengthBytes / 1024;
+                    WriteWithColor($"Total files size is {totalKB} KB.", ConsoleColor.Yellow);
+                }
+            }).Wait();
         }
 
     }

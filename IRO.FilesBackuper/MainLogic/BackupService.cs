@@ -2,6 +2,10 @@
 {
     public class BackupService : GitignoreInspectService
     {
+        public BackupService(string rootFolderPath, FindFilesRule findFilesRule) : base(rootFolderPath, findFilesRule)
+        {
+        }
+
         public event FilesProcessingProgressDelegate CopyProgressEvent;
 
         public void CopyFiles(string rootFolderPath, string outputFolder)
@@ -17,7 +21,7 @@
                 throw new Exception($"Destination directory '{outputFolder}' is subdirectory of inspected '{rootFolderPath}'.");
             }
 
-            var files = FindFiles(rootFolderPath, FindFilesRule.Tracked);
+            var files = FindFiles();
 
 
         }
