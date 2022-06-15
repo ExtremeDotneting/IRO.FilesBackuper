@@ -38,9 +38,6 @@ namespace IRO.FilesBackuper.MainLogic
             //Inspect
             var outputFiles = new List<string>();
             await InspectRecursively(_rootFolderPath, outputFiles, ignoreList);
-
-
-
             return outputFiles;
         }
 
@@ -51,7 +48,7 @@ namespace IRO.FilesBackuper.MainLogic
             )
         {
             //Skip folder if it ignored.
-            var currentFolderRelativePath = ToRelativePath( currentFolderPath);
+            var currentFolderRelativePath = ToRelativePath(currentFolderPath);
             if (_findFilesRule == FindFilesRule.Tracked && IsPathSkipped(ignoreList, currentFolderRelativePath, true))
             {
                 return;
@@ -72,7 +69,8 @@ namespace IRO.FilesBackuper.MainLogic
                 var relFilePath = ToRelativePath(fPath);
                 if (!IsPathSkipped(ignoreList, relFilePath, false))
                 {
-                    outputFilesList.Add(relFilePath);
+                    lock (outputFilesList)
+                        outputFilesList.Add(relFilePath);
                 }
             }, AsyncLinqCtx);
 
