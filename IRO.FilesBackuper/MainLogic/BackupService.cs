@@ -1,4 +1,7 @@
-﻿namespace IRO.FilesBackuper.MainLogic
+﻿using IRO.FilesBackuper.MainLogic.Models;
+using IRO.Threading.AsyncLinq;
+
+namespace IRO.FilesBackuper.MainLogic
 {
     public class BackupService : GitignoreInspectService
     {
@@ -6,7 +9,7 @@
         {
         }
 
-        public event FilesProcessingProgressDelegate CopyProgressEvent;
+        //public event FilesProcessingProgressDelegate CopyProgressEvent;
 
         public void CopyFiles(string rootFolderPath, string outputFolder)
         {
@@ -25,5 +28,27 @@
 
 
         }
+
+        public async Task<(IEnumerable<FileSizeInfo> List, long TotalBytesSize)> CountFilesSize(IEnumerable<string> filesPath)
+        {
+            RiseProcessingMessageEvent("Counting files size.");
+            long totalSize = 0;
+            var locker = new object();
+            var fileSizes = await filesPath.SelectAsync((filePath) =>
+            {
+                var fileSizeInfo = new FileSizeInfo()
+                {
+                    BytesSize = new FileInfo(filePath).Length,
+                    Path = filePath
+                };
+                lock(locker)
+                    totalSize += fileSizeInfo.BytesSize;
+
+                RiseProcessingMessageEvent($"Count size {fileSizeInfo.BytesSize} Bytes of '{fileSizeInfo.Path}'.");
+                return fileSizeInfo;
+            }, AsyncLinqCtx);
+            return (fileSizes, totalSize);
+        }
+
     }
 }

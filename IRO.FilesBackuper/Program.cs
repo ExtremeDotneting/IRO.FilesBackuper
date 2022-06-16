@@ -13,9 +13,11 @@ namespace IRO.FilesBackuper
             //"list --path=\"D:\\cf\\CODE_PROJECTS\\IRO_TOOLS\\IRO.FilesBackuper\\TestFiles\" --rule=All",
             //"list --path=\"D:\\cf\\CODE_PROJECTS\\MauDay_ECom\\ECom.MauDauGW\" --count_size=1",
             //"list --path=\"D:\\cf\\CODE_PROJECTS\\MauDay_ECom\\ECom.MauDauGW\" --count_size=1 --rule=Ignored",
-            //"list --path=\"D:\\cf\"",
+            "list --path=\"D:\\cf\" --count_size=1 --skip_size=5000",
+            //"list --path=\"D:\\cf\\CODE_PROJECTS\\IRO_TOOLS\" --count_size=1",
             //"list --path=\"D:\\cf\" --rule=Ignored",
-            "list --path=\"D:\\cf\\Chromes\" --count_size=1"
+            //"list --path=\"D:\\cf\\Chromes\" --count_size=1 --skip_size=1024",
+            //"list --path=\"D:\\cf\\CODE_PROJECTS\\WORK_PROJECTS\\DiplomaStatsCounter\\Frontend\""
         };
 #endif
 

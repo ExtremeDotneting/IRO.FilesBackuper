@@ -14,7 +14,9 @@ namespace IRO.FilesBackuper.MainLogic
         private readonly string _rootFolderPath;
         private readonly FindFilesRule _findFilesRule;
 
-        protected AsyncLinqContext AsyncLinqCtx { get; } = AsyncLinqContext.Create();
+        protected AsyncLinqContext AsyncLinqCtx { get; } //= AsyncLinqContext.Create(5);
+
+        public event ProcessingMessageEventDelegate ProcessingMessageEvent;
 
         public GitignoreInspectService(string rootFolderPath, FindFilesRule findFilesRule)
         {
@@ -49,6 +51,7 @@ namespace IRO.FilesBackuper.MainLogic
         {
             //Skip folder if it ignored.
             var currentFolderRelativePath = ToRelativePath(currentFolderPath);
+            RiseProcessingMessageEvent($"Inspecting directory '{currentFolderRelativePath}'.");
             if (_findFilesRule == FindFilesRule.Tracked && IsPathSkipped(ignoreList, currentFolderRelativePath, true))
             {
                 return;
@@ -64,22 +67,25 @@ namespace IRO.FilesBackuper.MainLogic
 
             //Add files to list.
             var filesPath = Directory.GetFiles(currentFolderPath);
-            await filesPath.ForEachAsync(async (fPath, pos) =>
-            {
-                var relFilePath = ToRelativePath(fPath);
-                if (!IsPathSkipped(ignoreList, relFilePath, false))
-                {
-                    lock (outputFilesList)
-                        outputFilesList.Add(relFilePath);
-                }
-            }, AsyncLinqCtx);
+            var filesPathFiltered = await filesPath.SelectAsync((fPath) =>
+              {
+                  var relFilePath = ToRelativePath(fPath);
+                  RiseProcessingMessageEvent($"Inspecting file '{relFilePath}'.");
+                  if (IsPathSkipped(ignoreList, relFilePath, false))
+                      return null;
+                  else
+                      return fPath;
+              }, AsyncLinqCtx);
+            filesPathFiltered = filesPathFiltered.Where(r => r != null);
+            lock (outputFilesList)
+                outputFilesList.AddRange(filesPathFiltered);
 
             //Inspect subdirectories.
             var directories = Directory.GetDirectories(currentFolderPath);
-            await directories.ForEachAsync(async (dirPath, pos) =>
+            foreach(var dirPath in directories)
             {
                 await InspectRecursively(dirPath, outputFilesList, ignoreList);
-            }, AsyncLinqCtx);
+            }
         }
 
         string ToRelativePath(string path)
@@ -146,6 +152,11 @@ namespace IRO.FilesBackuper.MainLogic
             }
 
             return clonedIngoreList;
+        }
+
+        protected void RiseProcessingMessageEvent(string msg)
+        {
+            ProcessingMessageEvent?.Invoke(msg);
         }
     }
 }

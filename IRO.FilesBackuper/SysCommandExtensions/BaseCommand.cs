@@ -12,10 +12,13 @@ namespace IRO.FilesBackuper.SysCommandExtensions
     {
         public ConsoleWrapper Console => App.Console;
 
-        public void WriteAsJson(object obj)
+        public void WriteAsJson(object obj, ConsoleColor? fontColor = null)
         {
-            var str = JsonConvert.SerializeObject(obj,Formatting.Indented);
-            Write(str, true);
+            var str = JsonConvert.SerializeObject(obj, Formatting.Indented);
+            if (fontColor.HasValue)
+                WriteWithColor(str, fontColor.Value);
+            else
+                Write(str);
         }
 
         public virtual string Read()
