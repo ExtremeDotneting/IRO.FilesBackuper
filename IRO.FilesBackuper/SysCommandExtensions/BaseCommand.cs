@@ -21,28 +21,58 @@ namespace IRO.FilesBackuper.SysCommandExtensions
                 Write(str);
         }
 
-        public virtual string Read()
+        protected void WrapAsync(Func<Task> func)
+        {
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await func();
+                }
+                catch (Exception ex)
+                {
+                    WriteWithColor(ex.ToString(), ConsoleColor.Red);
+                    Console.Read();
+                    throw;
+                }
+            }).Wait(); ;
+        }
+
+        protected void WrapAsync(Action act)
+        {
+            try
+            {
+                act();
+            }
+            catch (Exception ex)
+            {
+                WriteWithColor(ex.ToString(), ConsoleColor.Red);
+                Console.Read();
+            }
+        }
+
+        protected virtual string Read()
             => Console.Read();
 
-        public virtual string Read(string label)
+        protected virtual string Read(string label)
             => Console.Read(label, true);
 
-        public virtual void Write(object msg, bool forceWrite = false)
+        protected virtual void Write(object msg, bool forceWrite = false)
             => Console.Write(msg, true, forceWrite);
 
-        public virtual void Critical(object msg, bool forceWrite = false)
+        protected virtual void Critical(object msg, bool forceWrite = false)
             => Console.Critical(msg, true, forceWrite);
 
-        public virtual void Error(object msg, bool forceWrite = false)
+        protected virtual void Error(object msg, bool forceWrite = false)
             => Console.Error(msg, true, forceWrite);
 
-        public virtual void Success(object msg, bool forceWrite = false)
+        protected virtual void Success(object msg, bool forceWrite = false)
             => Console.Success(msg, true, forceWrite);
 
-        public void Warning(object msg, bool forceWrite = false)
+        protected void Warning(object msg, bool forceWrite = false)
             => Console.Warning(msg, true, forceWrite);
 
-        public virtual void WriteWithColor(object obj, ConsoleColor fontColor)
+        protected virtual void WriteWithColor(object obj, ConsoleColor fontColor)
             => Console.WriteWithColor(obj, true, fontColor);
     }
 }

@@ -9,6 +9,7 @@ using JsonConverter = Newtonsoft.Json.JsonConverter;
 
 namespace IRO.FilesBackuper.MainLogic.Models
 {
+
     [JsonConverter(typeof(ToStringJsonConverter))]
     public struct FileSizeInfo 
     {

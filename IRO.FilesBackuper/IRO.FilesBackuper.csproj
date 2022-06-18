@@ -10,13 +10,10 @@
   <ItemGroup>
     <PackageReference Include="CmdLine" Version="1.0.7.509" />
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="IRO.Threading" Version="5.0.10" />
     <PackageReference Include="MAB.DotIgnore" Version="3.0.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="SysCommand" Version="2.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\IRO\src\Common\IRO.Threading\IRO.Threading.csproj" />
   </ItemGroup>
 
 </Project>

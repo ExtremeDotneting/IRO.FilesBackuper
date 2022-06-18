@@ -8,16 +8,20 @@ namespace IRO.FilesBackuper
 #if DEBUG
         static string[] TestCommands { get; } = new[]
         {
-            //"list --path=\"D:\\cf\\CODE_PROJECTS\\IRO_TOOLS\\IRO.FilesBackuper\\TestFiles\"",
-            //"list --path=\"D:\\cf\\CODE_PROJECTS\\IRO_TOOLS\\IRO.FilesBackuper\\TestFiles\" --rule=Ignored",
-            //"list --path=\"D:\\cf\\CODE_PROJECTS\\IRO_TOOLS\\IRO.FilesBackuper\\TestFiles\" --rule=All",
-            //"list --path=\"D:\\cf\\CODE_PROJECTS\\MauDay_ECom\\ECom.MauDauGW\" --count_size=1",
-            //"list --path=\"D:\\cf\\CODE_PROJECTS\\MauDay_ECom\\ECom.MauDauGW\" --count_size=1 --rule=Ignored",
-            "list --path=\"D:\\cf\" --count_size=1 --skip_size=5000",
-            //"list --path=\"D:\\cf\\CODE_PROJECTS\\IRO_TOOLS\" --count_size=1",
-            //"list --path=\"D:\\cf\" --rule=Ignored",
-            //"list --path=\"D:\\cf\\Chromes\" --count_size=1 --skip_size=1024",
-            //"list --path=\"D:\\cf\\CODE_PROJECTS\\WORK_PROJECTS\\DiplomaStatsCounter\\Frontend\""
+            //"list --root=\"D:\\cf\\CODE_PROJECTS\\IRO_TOOLS\\IRO.FilesBackuper\\TestFiles\"",
+            //"list --root=\"D:\\cf\\CODE_PROJECTS\\IRO_TOOLS\\IRO.FilesBackuper\\TestFiles\" --rule=Ignored",
+            //"list --root=\"D:\\cf\\CODE_PROJECTS\\IRO_TOOLS\\IRO.FilesBackuper\\TestFiles\" --rule=All",
+            //"list --root=\"D:\\cf\\CODE_PROJECTS\\MauDay_ECom\\ECom.MauDauGW\" --count_size=1",
+            //"list --root=\"D:\\cf\\CODE_PROJECTS\\MauDay_ECom\\ECom.MauDauGW\" --count_size=1 --rule=Ignored",
+            //"list --root=\"D:\\cf\" --count_size=1 --skip_size=5000",
+            //"list --root=\"D:\\cf\\CODE_PROJECTS\\IRO_TOOLS\" --count_size=1",
+            //"list --root=\"D:\\cf\" --rule=Ignored",
+            //"list --root=\"D:\\cf\\CODE_PROJECTS\\WORK_PROJECTS\\DiplomaStatsCounter\\Frontend\"",
+            //"backup --root=\"D:\\cf\\Chromes\" --out=\"F:\\cf_Backup\\Chromes\""
+            //"backup --root=\"D:\\cf\\CODE_PROJECTS\" --out=\"F:\\cf_Backup\\CODE_PROJECTS\"",
+            //"backup --root=\"D:\\cf\\CODE_PROJECTS\" --out=\"D:\\cf_Backup\\CODE_PROJECTS\""
+            //"backup --root=\"D:\\cf\\Chromes\" --out=\"D:\\cf_Backup\\Chromes\""            
+            "list --root=\"D:\\cf\\Chromes\" --count_size=1 --skip_size=1024",
         };
 #endif
 
